@@ -1,0 +1,39 @@
+name: YouTube Live Stream Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'Video URL to stream'
+        required: true
+        type: string
+
+env:
+  YOUTUBE_RTMP_URL: ${{ secrets.YOUTUBE_RTMP_URL }}
+  YOUTUBE_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      
+      - name: Download video
+        run: |
+          wget -O video.mp4 ${{ github.event.inputs.video_url }}
+      
+      - name: Start YouTube livestream
+        run: |
+          ffmpeg -re -i video.mp4 \
+            -c:v libx264 -preset veryfast -b:v 3000k \
+            -maxrate 3000k -bufsize 6000k \
+            -pix_fmt yuv420p -g 50 \
+            -c:a aac -b:a 160k -ar 44100 \
+            -f flv "${YOUTUBE_RTMP_URL}/${YOUTUBE_STREAM_KEY}"
