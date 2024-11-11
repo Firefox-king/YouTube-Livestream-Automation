@@ -1,3 +1,17 @@
+name: YouTube Live Stream Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'Video URL to stream'
+        required: true
+        type: string
+
+env:
+  YOUTUBE_RTMP_URL: ${{ secrets.YOUTUBE_RTMP_URL }}
+  YOUTUBE_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+
 jobs:
   stream:
     runs-on: ubuntu-latest
@@ -5,8 +19,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          node-version: '20'  # Ensure compatibility with Node.js 20
       
       - name: Install FFmpeg
         run: |
@@ -15,7 +27,7 @@ jobs:
       
       - name: Download video
         run: |
-          wget -O video.mp4 ${{ github.event.inputs.video_url }}
+          wget -O video.mp4 "${{ github.event.inputs.video_url }}"
       
       - name: Start YouTube livestream
         run: |
@@ -24,4 +36,4 @@ jobs:
             -maxrate 3000k -bufsize 6000k \
             -pix_fmt yuv420p -g 50 \
             -c:a aac -b:a 160k -ar 44100 \
-            -f flv "${YOUTUBE_RTMP_URL}/${YOUTUBE_STREAM_KEY}"
+            -f flv "${{ env.YOUTUBE_RTMP_URL }}/${{ env.YOUTUBE_STREAM_KEY }}"
